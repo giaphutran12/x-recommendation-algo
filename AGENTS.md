@@ -54,13 +54,6 @@
 - Border default changed to `currentColor` (was `gray-200`)
 - Ring width default `1px` (was `3px`)
 
-## Orchestrator Rules
-- ALWAYS use `run_in_background=true` for subagent tasks so the orchestrator remains available for user questions
-- NEVER block on long-running tasks — user should always be able to interact
-- NEVER use `block=true` when calling `background_output` — always `block=false`
-- Wait for system `[BACKGROUND TASK COMPLETED]` notifications before collecting results
-- When the user sends a message while tasks are running, respond to the user FIRST, then collect results
-
 ## Research Tool Priority Chain
 When researching ANY topic (external docs, model comparisons, best practices, library usage):
 1. **Nia FIRST** — use Nia search aggressively for up-to-date framework docs, API docs, latest standards, library versions, best practices. The developer pays for unlimited Nia access — use it instead of hallucinating.
@@ -68,29 +61,15 @@ When researching ANY topic (external docs, model comparisons, best practices, li
 3. **Context7 / Webfetch LAST** — only if both Nia and Exa fail
 
 ## Background Task Handling
-- Launch background agents with `run_in_background=true`
-- Wait for system `[BACKGROUND TASK COMPLETED]` notifications
-- Only call `background_output` after receiving the completion notification, ALWAYS with `block=false`
-- When working on long multi-step plans, use `run_in_background=true` for parallel exploration tasks so the main agent remains free to immediately respond to new user messages
-
-## Delegation Protocol
-- Always use `task()` for implementation work
-- One task per delegation — never batch multiple tasks
-- Use `session_id` for retries and follow-ups (preserves context, saves tokens)
-- Store every `session_id` returned from delegations
-
-## Session Efficiency
-- If nothing productive remains to do, terminate the session and wait for the next instruction
-- Do not generate filler content or ask unnecessary clarifying questions when the task is clear
-- Prefer action over discussion
-
-## Code Quality
+- ALWAYS use `run_in_background=true` for subagent tasks so the orchestrator remains available for user questions
+- NEVER use `block=true` when calling `background_output` — always `block=false`
+- Wait for system `[BACKGROUND TASK COMPLETED]` notifications before collecting results
+- When the user sends a message while tasks are running, respond to the user FIRST, then collect results
+## Code Standards
 - Always run linting/type-checking after code changes when available
 - Never commit secrets, API keys, or credentials
 - NEVER read .env files — ask user to provide the env var names when needed
 - Prefer editing existing files over creating new ones
-
-## Git Discipline
 - Never force push to main/master
 - Never skip pre-commit hooks (--no-verify)
 - Write concise commit messages that explain WHY, not WHAT
@@ -99,24 +78,47 @@ When researching ANY topic (external docs, model comparisons, best practices, li
 ## Debug-First Development
 Always include server-side logging when building new features. Don't wait for bugs to add observability.
 
-### Server-Side (always include)
-- Add `console.log` with a `[TAG]` prefix for every new feature (e.g., `[AML]`, `[SYNC]`, `[AUTH]`)
-- Log key decision points: function entry, external API calls, database writes, error paths
-- Include relevant IDs in logs (reportId, dealId, userId) for traceability
-- Log timing for operations that hit external services (Supabase, Gemini, Velocity API)
-- These logs are visible in Vercel/deployment logs — the developer can check them without asking users
+**Server-Side:** Add `console.log` with a `[TAG]` prefix (e.g., `[AML]`, `[SYNC]`) for every new feature. Log key decision points, external API calls, database writes, error paths, and timing for Supabase/Gemini calls. These logs are visible in Vercel/deployment logs.
 
-### Client-Side (errors only)
-- Do NOT add verbose console.log to client components in production
-- Use `toast.error()` with a clear message when something fails — users can screenshot the toast
-- For debugging during development, add temporary `console.log` with `[DEBUG]` prefix and remove before committing
-- If a feature involves real-time connections (WebSocket, Realtime), add connection status logging during development
+**Client-Side:** Do NOT add verbose console.log to production components. Use `toast.error()` for user-facing errors. For development, add temporary `[DEBUG]` logs and remove before committing.
 
-### Lifecycle
-1. Build feature WITH server-side logging from the start
-2. During development, add temporary client-side `[DEBUG]` logs as needed
-3. Once feature is verified working, remove `[DEBUG]` client logs but keep server-side logs
-4. Server-side logs stay permanently — they cost nothing and save hours during incidents
+**Lifecycle:** Build WITH server-side logging from the start. Add temporary client `[DEBUG]` logs during development, remove them when verified. Keep server-side logs permanently — they cost nothing and save hours during incidents.
+
+## shadcn/ui — Mandatory Component Rule
+
+**If a component exists in shadcn/ui, you MUST use it. Do NOT write custom components that duplicate shadcn functionality.**
+
+Only write a custom component when NOTHING in the entire shadcn library fits the use case.
+
+All shadcn components are installed via `bunx shadcn@latest add --all` and live in `src/components/ui/`.
+
+### Key shadcn Components (use these FIRST)
+- **Button** (`@/components/ui/button`) — all buttons, all variants (ghost, outline, destructive, etc.)
+- **Card** (`@/components/ui/card`) — Card, CardHeader, CardTitle, CardContent, CardFooter
+- **Badge** (`@/components/ui/badge`) — status pills, tags, labels
+- **Skeleton** (`@/components/ui/skeleton`) — loading placeholders
+- **Slider** (`@/components/ui/slider`) — range inputs (uses @base-ui, value is array: `value={[n]}`, callback: `onValueChange`)
+- **Collapsible** (`@/components/ui/collapsible`) — expandable sections (Collapsible, CollapsibleTrigger, CollapsibleContent)
+- **Avatar** (`@/components/ui/avatar`) — user avatars (Avatar, AvatarImage, AvatarFallback)
+- **Separator** (`@/components/ui/separator`) — dividers (replaces `border-b` divs)
+- **Progress** (`@/components/ui/progress`) — progress bars
+- **Tooltip** (`@/components/ui/tooltip`) — hover tooltips (needs TooltipProvider in layout)
+- **Spinner** (`@/components/ui/spinner`) — loading spinners
+
+### Icons
+- Use `lucide-react` for ALL icons — it's installed with shadcn
+- Do NOT write inline SVG icons if a lucide icon exists
+- Only use inline SVG for brand logos (X/Twitter logo) that lucide doesn't have
+
+### Utility
+- Use `cn()` from `@/lib/utils` for conditional class merging (clsx + tailwind-merge)
+
+### shadcn + Tailwind v4 Setup
+- `@import "shadcn/tailwind.css"` in globals.css (after tailwindcss and tw-animate-css)
+- `@theme inline {}` block maps shadcn CSS variables to Tailwind color tokens
+- Custom X theme colors use `--color-x-*` namespace to avoid collisions with shadcn's `--color-*`
+- No `tailwind.config.js` — everything is CSS-first
+- `components.json` has `"tailwind.config": ""` (blank for v4)
 
 ## Next.js 16 Gotchas
 - Turbopack is default — no `--turbopack` flag needed

@@ -25,6 +25,15 @@ build
 *~
 .DS_Store
 
+# Agent configs
+.agent/
+.agents/
+.claude/
+.qwen/
+SKILL.md
+skills-lock.json
+tweakcn.txt
+
 # Project-specific
 .sisyphus/evidence/
 models/*.onnx
@@ -32,4 +41,5 @@ models/*.pt
 models/*.pth
 training/__pycache__
 training/*.pyc
+training/.venv/
 *.egg-info
