@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "@/components/sidebar";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import VersionSwitcher from "@/components/version-switcher";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -18,24 +19,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable)}>
-      <body className="bg-bg text-text min-h-screen">
-        <div className="flex justify-center">
-          <div className="flex w-full max-w-[1265px]">
-            <aside className="flex-shrink-0 w-[68px] xl:w-[275px] border-r border-border">
-              <Sidebar />
-            </aside>
-
-            <main className="flex-1 min-w-0 max-w-[600px] border-r border-border">
-              {children}
-            </main>
-
-            <aside
-              id="algorithm-panel"
-              className="hidden lg:block flex-shrink-0 w-[350px]"
-            />
-          </div>
-        </div>
+    <html lang="en" className={cn("dark font-sans", geist.variable)}>
+      <body className="bg-background text-foreground min-h-screen">
+        <TooltipProvider>
+          {children}
+          <VersionSwitcher />
+        </TooltipProvider>
       </body>
     </html>
   );
