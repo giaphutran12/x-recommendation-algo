@@ -3,6 +3,10 @@
 
 import type { ScoreExplanation } from '@/lib/types/ranking';
 import type { EngagementType } from '@/lib/types/database';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -87,7 +91,7 @@ function SignalBar({
         style={{ backgroundColor: '#2f3336' }}
       >
         <div
-          className={`h-full rounded-full ${colorClass} transition-all duration-500`}
+          className={cn('h-full rounded-full transition-all duration-500', colorClass)}
           style={{ width: `${widthPct}%` }}
         />
       </div>
@@ -136,23 +140,27 @@ function MultiplierBadge({
 }) {
   let bgColor: string;
   let textColor: string;
+  let borderColor: string;
 
   if (value < 1.0) {
     bgColor = label.includes('network') ? 'rgba(239,68,68,0.15)' : 'rgba(234,179,8,0.15)';
     textColor = label.includes('network') ? '#f87171' : '#facc15';
+    borderColor = label.includes('network') ? 'rgba(239,68,68,0.3)' : 'rgba(234,179,8,0.3)';
   } else {
     bgColor = 'rgba(34,197,94,0.15)';
     textColor = '#4ade80';
+    borderColor = 'rgba(34,197,94,0.3)';
   }
 
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-      style={{ backgroundColor: bgColor, color: textColor }}
+    <Badge
+      variant="outline"
+      className="rounded-full px-2 py-0.5 font-medium"
+      style={{ backgroundColor: bgColor, color: textColor, borderColor }}
     >
       <span className="font-mono">×{fmt(value)}</span>
       <span>{label}</span>
-    </span>
+    </Badge>
   );
 }
 
@@ -191,95 +199,92 @@ export function ScoreBreakdown({ explanation, rank, inNetwork }: ScoreBreakdownP
   const summary = buildSummary(explanation, rank, inNetwork);
 
   return (
-    <div
-      className="rounded-xl border p-4 text-sm"
-      style={{
-        backgroundColor: '#16181c',
-        borderColor: '#2f3336',
-        color: '#e7e9ea',
-      }}
-    >
-      <div className="mb-4 flex items-center justify-between">
+    <Card className="bg-[#16181c] border border-[#2f3336] text-[#e7e9ea] ring-0 gap-0 py-0 text-sm">
+      <CardHeader className="px-4 pt-4 pb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest" style={{ color: '#71767b' }}>
+              Rank
+            </p>
+            <p className="text-2xl font-bold tabular-nums" style={{ color: '#1d9bf0' }}>
+              #{rank}
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="text-xs font-medium uppercase tracking-widest" style={{ color: '#71767b' }}>
+              Total Score
+            </p>
+            <p className="font-mono text-2xl font-bold tabular-nums" style={{ color: '#e7e9ea' }}>
+              {totalScore.toFixed(4)}
+            </p>
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="px-4 pb-4 flex flex-col gap-4">
+        <p
+          className="rounded-lg p-3 text-xs leading-relaxed"
+          style={{ backgroundColor: 'rgba(29,155,240,0.08)', color: '#93c5fd', borderLeft: '2px solid #1d9bf0' }}
+        >
+          {summary}
+        </p>
+
         <div>
-          <p className="text-xs font-medium uppercase tracking-widest" style={{ color: '#71767b' }}>
-            Rank
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: '#71767b' }}>
+            Signal Breakdown
           </p>
-          <p className="text-2xl font-bold tabular-nums" style={{ color: '#1d9bf0' }}>
-            #{rank}
-          </p>
+          <div className="flex flex-col gap-2">
+            {signals.map((sig) => (
+              <SignalBar
+                key={sig.label}
+                label={sig.label}
+                value={sig.value}
+                maxValue={maxSignalValue}
+                colorClass={sig.colorClass}
+              />
+            ))}
+          </div>
         </div>
 
-        <div className="text-right">
-          <p className="text-xs font-medium uppercase tracking-widest" style={{ color: '#71767b' }}>
-            Total Score
+        <Separator className="bg-[#2f3336]" />
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: '#71767b' }}>
+            Predicted Engagement
           </p>
-          <p className="font-mono text-2xl font-bold tabular-nums" style={{ color: '#e7e9ea' }}>
-            {totalScore.toFixed(4)}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1">
+            {engagementTypes.map((type) => (
+              <EngagementRow
+                key={type}
+                type={type}
+                score={engagementTypeScores[type] ?? 0}
+              />
+            ))}
+          </div>
+        </div>
+
+        <Separator className="bg-[#2f3336]" />
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: '#71767b' }}>
+            Modifiers
           </p>
-        </div>
-      </div>
-
-      <p
-        className="mb-4 rounded-lg p-3 text-xs leading-relaxed"
-        style={{ backgroundColor: 'rgba(29,155,240,0.08)', color: '#93c5fd', borderLeft: '2px solid #1d9bf0' }}
-      >
-        {summary}
-      </p>
-
-      <div className="mb-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: '#71767b' }}>
-          Signal Breakdown
-        </p>
-        <div className="flex flex-col gap-2">
-          {signals.map((sig) => (
-            <SignalBar
-              key={sig.label}
-              label={sig.label}
-              value={sig.value}
-              maxValue={maxSignalValue}
-              colorClass={sig.colorClass}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-4" style={{ borderTop: '1px solid #2f3336' }} />
-
-      <div className="mb-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: '#71767b' }}>
-          Predicted Engagement
-        </p>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-1">
-          {engagementTypes.map((type) => (
-            <EngagementRow
-              key={type}
-              type={type}
-              score={engagementTypeScores[type] ?? 0}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="mb-3" style={{ borderTop: '1px solid #2f3336' }} />
-
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: '#71767b' }}>
-          Modifiers
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <MultiplierBadge
-            value={authorDiversityMultiplier}
-            label="author diversity"
-          />
-          {oonMultiplier < 1.0 && (
+          <div className="flex flex-wrap gap-2">
             <MultiplierBadge
-              value={oonMultiplier}
-              label="out-of-network"
+              value={authorDiversityMultiplier}
+              label="author diversity"
             />
-          )}
+            {oonMultiplier < 1.0 && (
+              <MultiplierBadge
+                value={oonMultiplier}
+                label="out-of-network"
+              />
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

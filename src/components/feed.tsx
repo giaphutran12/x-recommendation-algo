@@ -2,8 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { Zap, X, MessageSquare } from 'lucide-react';
 import { TweetCard } from '@/components/tweet-card';
 import { AlgorithmPanel } from '@/components/algorithm-panel';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 import type { ScoredCandidate } from '@/lib/types/ranking';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -33,25 +38,25 @@ interface StreamFeedResponse {
 
 function TweetSkeleton() {
   return (
-    <div className="px-4 py-3 border-b border-[#2f3336] animate-pulse">
+    <div className="px-4 py-3 border-b border-[#2f3336]">
       <div className="flex gap-3">
         <div className="shrink-0">
-          <div className="w-10 h-10 rounded-full bg-[#2f3336]" />
+          <Skeleton className="w-10 h-10 rounded-full" />
         </div>
         <div className="flex-1 min-w-0 space-y-2">
           <div className="flex gap-2 items-center">
-            <div className="h-3.5 w-28 bg-[#2f3336] rounded" />
-            <div className="h-3 w-20 bg-[#2f3336] rounded" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3.5 w-24" />
           </div>
           <div className="space-y-1.5">
-            <div className="h-3.5 w-full bg-[#2f3336] rounded" />
-            <div className="h-3.5 w-5/6 bg-[#2f3336] rounded" />
-            <div className="h-3.5 w-3/4 bg-[#2f3336] rounded" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-3/4" />
           </div>
-          <div className="flex gap-8 pt-1">
-            <div className="h-3 w-8 bg-[#2f3336] rounded" />
-            <div className="h-3 w-8 bg-[#2f3336] rounded" />
-            <div className="h-3 w-8 bg-[#2f3336] rounded" />
+          <div className="flex gap-10 pt-1">
+            <Skeleton className="h-3 w-8" />
+            <Skeleton className="h-3 w-8" />
+            <Skeleton className="h-3 w-8" />
           </div>
         </div>
       </div>
@@ -79,17 +84,7 @@ function EmptyState() {
       role="status"
     >
       <div className="w-16 h-16 rounded-full bg-[#16181c] flex items-center justify-center mb-4">
-        <svg
-          viewBox="0 0 24 24"
-          width="28"
-          height="28"
-          fill="none"
-          stroke="#71767b"
-          strokeWidth="1.5"
-          aria-hidden="true"
-        >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
+        <MessageSquare size={28} stroke="#71767b" strokeWidth={1.5} aria-hidden="true" />
       </div>
       <p className="text-[#e7e9ea] font-semibold text-[17px]">No tweets found</p>
       <p className="text-[#71767b] text-sm mt-1">
@@ -108,7 +103,7 @@ function LoadingMore() {
       role="status"
       aria-label="Loading more tweets"
     >
-      <div className="w-5 h-5 rounded-full border-2 border-[#1d9bf0] border-t-transparent animate-spin" />
+      <Spinner className="size-5 text-[#1d9bf0]" />
       <span className="sr-only">Loading more tweets…</span>
     </div>
   );
@@ -124,39 +119,23 @@ function ReRankBanner({ onDismiss }: { onDismiss: () => void }) {
 
   return (
     <div
-      className="sticky top-[57px] z-10 mx-4 mt-2 mb-1 px-3 py-2 bg-[#1d9bf0]/10 border border-[#1d9bf0]/30 rounded-xl flex items-center gap-2"
+      className="sticky top-[45px] z-10 mx-4 mt-0 mb-2 px-3 py-2 bg-[#1d9bf0]/10 border border-[#1d9bf0]/30 rounded-xl flex items-center gap-2"
       role="status"
       aria-live="polite"
     >
-      <svg
-        viewBox="0 0 24 24"
-        width="14"
-        height="14"
-        fill="#1d9bf0"
-        aria-hidden="true"
-      >
-        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-      </svg>
+      <Zap size={14} fill="#1d9bf0" stroke="#1d9bf0" aria-hidden="true" />
       <span className="text-[#1d9bf0] text-xs font-medium">
         Feed re-ranked with new weights
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon-xs"
         onClick={onDismiss}
-        className="ml-auto text-[#71767b] hover:text-[#e7e9ea] transition-colors"
+        className={cn('ml-auto text-[#71767b] hover:text-[#e7e9ea] hover:bg-transparent')}
         aria-label="Dismiss notification"
       >
-        <svg
-          viewBox="0 0 24 24"
-          width="14"
-          height="14"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden="true"
-        >
-          <path d="M18 6L6 18M6 6l12 12" />
-        </svg>
-      </button>
+        <X size={14} aria-hidden="true" />
+      </Button>
     </div>
   );
 }

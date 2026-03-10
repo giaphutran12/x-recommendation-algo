@@ -2,8 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Heart, MessageCircle, Repeat2, Eye, ChevronDown } from 'lucide-react';
 import type { ScoredCandidate, ScoreExplanation } from '@/lib/types/ranking';
 import type { PersonaType } from '@/lib/types/database';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 
 // ─── Persona Styling ───────────────────────────────────────────────────────────
 
@@ -53,96 +58,6 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-// ─── SVG Icons ─────────────────────────────────────────────────────────────────
-
-function HeartIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      aria-hidden="true"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
-}
-
-function ReplyIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      aria-hidden="true"
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function RepostIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M17 1l4 4-4 4" />
-      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-      <path d="M7 23l-4-4 4-4" />
-      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      aria-hidden="true"
-    >
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="12"
-      height="12"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms ease' }}
-      aria-hidden="true"
-    >
-      <path d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
 // ─── Score Bar ─────────────────────────────────────────────────────────────────
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -169,22 +84,22 @@ function WhyThisTweet({ explanation }: { explanation: ScoreExplanation }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="mt-3 pt-3 border-t border-[#2f3336]">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        className="flex items-center gap-1.5 text-xs text-[#71767b] hover:text-[#1d9bf0] transition-colors"
-        aria-expanded={open}
-        aria-controls="why-this-tweet-panel"
-      >
-        <ChevronIcon open={open} />
-        Why this tweet?
-      </button>
+    <div className="mt-2 pt-2 border-t border-[#2f3336]">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-1.5 text-xs text-[#71767b] hover:text-[#1d9bf0] transition-colors"
+        >
+          <ChevronDown
+            size={12}
+            strokeWidth={2.5}
+            className={cn('transition-transform duration-150', open && 'rotate-180')}
+            aria-hidden="true"
+          />
+          Why this tweet?
+        </CollapsibleTrigger>
 
-      {open && (
-        <div id="why-this-tweet-panel" className="mt-3 space-y-1.5">
+        <CollapsibleContent className="mt-3 space-y-1.5">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[10px] font-semibold text-[#71767b] uppercase tracking-widest">
               Score breakdown
@@ -215,8 +130,8 @@ function WhyThisTweet({ explanation }: { explanation: ScoreExplanation }) {
               out-of-network
             </div>
           </div>
-        </div>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
@@ -243,7 +158,7 @@ export function TweetCard({ candidate }: TweetCardProps) {
     >
       {tweet.tweet_type === 'repost' && (
         <div className="flex items-center gap-2 mb-2 pl-10 text-[#71767b] text-xs font-medium">
-          <RepostIcon size={14} />
+          <Repeat2 size={14} strokeWidth={1.75} aria-hidden="true" />
           <span>{author.display_name} Reposted</span>
         </div>
       )}
@@ -270,11 +185,11 @@ export function TweetCard({ candidate }: TweetCardProps) {
             <Link
               href={`/profile/${author.username}`}
               onClick={(e) => e.stopPropagation()}
-              className="font-bold text-[#e7e9ea] text-sm hover:underline truncate max-w-[160px]"
+              className="font-bold text-[#e7e9ea] text-sm hover:underline truncate max-w-[180px]"
             >
               {author.display_name}
             </Link>
-            <span className="text-[#71767b] text-sm truncate max-w-[120px]">
+            <span className="text-[#71767b] text-sm truncate max-w-[140px]">
               @{author.username}
             </span>
             <span className="text-[#71767b] text-sm" aria-hidden="true">·</span>
@@ -287,15 +202,13 @@ export function TweetCard({ candidate }: TweetCardProps) {
             </time>
 
             <div className="ml-auto flex items-center gap-1.5">
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${badgeClass}`}
-              >
+              <Badge variant="outline" className={cn('text-[11px] px-2 py-0.5 rounded-full font-medium h-auto', badgeClass)}>
                 {author.persona_type}
-              </span>
+              </Badge>
               {!in_network && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-[#1d9bf0]/10 text-[#1d9bf0] border border-[#1d9bf0]/20">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 rounded-full font-medium h-auto bg-[#1d9bf0]/10 text-[#1d9bf0] border-[#1d9bf0]/20">
                   suggested
-                </span>
+                </Badge>
               )}
             </div>
           </div>
@@ -307,7 +220,7 @@ export function TweetCard({ candidate }: TweetCardProps) {
             </p>
           )}
 
-          <p className="mt-1 text-[#e7e9ea] text-sm leading-relaxed whitespace-pre-wrap break-words">
+          <p className="mt-1 text-[#e7e9ea] text-[15px] leading-[20px] whitespace-pre-wrap break-words">
             {tweet.content}
           </p>
 
@@ -323,61 +236,73 @@ export function TweetCard({ candidate }: TweetCardProps) {
           )}
 
           <div
-            className="flex items-center mt-3 -ml-1.5"
+            className="flex items-center mt-3 -ml-2"
             role="group"
             aria-label="Tweet engagement actions"
           >
-            <button
-              className="flex items-center gap-1 text-[#71767b] hover:text-[#1d9bf0] group transition-colors mr-5"
-              aria-label={`${tweet.reply_count} replies`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="p-1.5 rounded-full group-hover:bg-[#1d9bf0]/10 transition-colors">
-                <ReplyIcon />
-              </span>
-              {tweet.reply_count > 0 && (
-                <span className="text-xs tabular-nums">{formatCount(tweet.reply_count)}</span>
-              )}
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                className="flex items-center gap-1 text-[#71767b] hover:text-[#1d9bf0] group transition-colors mr-5"
+                aria-label={`${tweet.reply_count} replies`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="p-1.5 rounded-full group-hover:bg-[#1d9bf0]/10 transition-colors">
+                  <MessageCircle size={18} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                {tweet.reply_count > 0 && (
+                  <span className="text-xs tabular-nums">{formatCount(tweet.reply_count)}</span>
+                )}
+              </TooltipTrigger>
+              <TooltipContent>Reply</TooltipContent>
+            </Tooltip>
 
-            <button
-              className="flex items-center gap-1 text-[#71767b] hover:text-[#00ba7c] group transition-colors mr-5"
-              aria-label={`${tweet.repost_count} reposts`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="p-1.5 rounded-full group-hover:bg-[#00ba7c]/10 transition-colors">
-                <RepostIcon />
-              </span>
-              {tweet.repost_count > 0 && (
-                <span className="text-xs tabular-nums">{formatCount(tweet.repost_count)}</span>
-              )}
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                className="flex items-center gap-1 text-[#71767b] hover:text-[#00ba7c] group transition-colors mr-5"
+                aria-label={`${tweet.repost_count} reposts`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="p-1.5 rounded-full group-hover:bg-[#00ba7c]/10 transition-colors">
+                  <Repeat2 size={18} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                {tweet.repost_count > 0 && (
+                  <span className="text-xs tabular-nums">{formatCount(tweet.repost_count)}</span>
+                )}
+              </TooltipTrigger>
+              <TooltipContent>Repost</TooltipContent>
+            </Tooltip>
 
-            <button
-              className="flex items-center gap-1 text-[#71767b] hover:text-[#f91880] group transition-colors mr-5"
-              aria-label={`${tweet.like_count} likes`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="p-1.5 rounded-full group-hover:bg-[#f91880]/10 transition-colors">
-                <HeartIcon />
-              </span>
-              {tweet.like_count > 0 && (
-                <span className="text-xs tabular-nums">{formatCount(tweet.like_count)}</span>
-              )}
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                className="flex items-center gap-1 text-[#71767b] hover:text-[#f91880] group transition-colors mr-5"
+                aria-label={`${tweet.like_count} likes`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="p-1.5 rounded-full group-hover:bg-[#f91880]/10 transition-colors">
+                  <Heart size={18} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                {tweet.like_count > 0 && (
+                  <span className="text-xs tabular-nums">{formatCount(tweet.like_count)}</span>
+                )}
+              </TooltipTrigger>
+              <TooltipContent>Like</TooltipContent>
+            </Tooltip>
 
-            <button
-              className="flex items-center gap-1 text-[#71767b] hover:text-[#1d9bf0] group transition-colors ml-auto"
-              aria-label={`${tweet.click_count} views`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="p-1.5 rounded-full group-hover:bg-[#1d9bf0]/10 transition-colors">
-                <EyeIcon />
-              </span>
-              {tweet.click_count > 0 && (
-                <span className="text-xs tabular-nums">{formatCount(tweet.click_count)}</span>
-              )}
-            </button>
+            <Tooltip>
+              <TooltipTrigger
+                className="flex items-center gap-1 text-[#71767b] hover:text-[#1d9bf0] group transition-colors ml-auto"
+                aria-label={`${tweet.click_count} views`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="p-1.5 rounded-full group-hover:bg-[#1d9bf0]/10 transition-colors">
+                  <Eye size={18} strokeWidth={1.75} aria-hidden="true" />
+                </span>
+                {tweet.click_count > 0 && (
+                  <span className="text-xs tabular-nums">{formatCount(tweet.click_count)}</span>
+                )}
+              </TooltipTrigger>
+              <TooltipContent>Views</TooltipContent>
+            </Tooltip>
           </div>
 
           {explanation !== null && <WhyThisTweet explanation={explanation} />}
