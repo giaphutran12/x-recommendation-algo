@@ -21,7 +21,12 @@ import random
 import time
 from collections import defaultdict
 
+from dotenv import load_dotenv
+
 import numpy as np
+
+# Load .env.local (Next.js convention)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env.local"))
 
 # ─── Ensure we can import from venv ───
 VENV = os.path.join(os.path.dirname(__file__), ".venv")

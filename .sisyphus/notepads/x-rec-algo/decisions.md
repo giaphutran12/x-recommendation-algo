@@ -6,3 +6,6 @@
 - Tweet generation: OpenCode subagents ($0 cost), NOT LLM API
 - ML framework: PyTorch (not TensorFlow.js — 10-50x slower, abandoned)
 - Heuristic fallback: engagement predictor works without ONNX model
+
+## 2026-03-10 - Demo perf strategy
+- Prefer code-only fixes: stop selecting/returning `embedding`, limit engagement hydration to candidate tweet IDs, remove redundant hydrator; add small in-memory cache + rerank-only path for SSE weight changes.

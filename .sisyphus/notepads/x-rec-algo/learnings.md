@@ -263,3 +263,9 @@ Added `python-dotenv` for optional `.env.local` loading in training scripts.
 - Right sidebar `<aside id="algorithm-panel">` is an empty placeholder — AlgorithmPanel will be portal'd or rendered by the feed page
 - Sidebar icon spans hidden at small/medium viewports with `hidden xl:block` on label text
 - `bg-bg/80` opacity syntax works in Tailwind v4 with `@theme` CSS variables
+
+## 2026-03-10 - Feed perf bottlenecks (observed)
+- `src/lib/ranking/hydrators/engagement-hydrator.ts`: unbounded `.from('engagements').select('tweet_id').eq('user_id', viewer)` can pull 100k+ rows; dominates pipeline time at scale.
+- `src/lib/ranking/hydrators/core-data-hydrator.ts`: refetches tweets+users already loaded by sources; redundant DB roundtrips.
+- `src/lib/ranking/sources/*`: `.select('*')` includes `tweets.embedding` (pgvector) which Supabase serializes as a large string; bloats API/SSE payload and client parse.
+- `src/components/version-switcher.tsx`: `prefetch={true}` forces prefetch of many versions on load.
