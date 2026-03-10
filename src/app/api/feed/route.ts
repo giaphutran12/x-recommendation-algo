@@ -20,6 +20,8 @@ const DEFAULT_WEIGHTS: AlgorithmWeights = {
     follow_author: 1.0,
     not_interested: 1.0,
   },
+  oon_penalty: undefined,
+  diversity_decay: undefined,
   updated_at: new Date().toISOString(),
 };
 
@@ -64,8 +66,13 @@ export async function GET(request: NextRequest) {
       `[FEED] Feed request: userId=${userId}, limit=${limit}, pipeline=${pipelineMs}ms, results=${results.length}`,
     );
 
+    const cleaned = results.map((c) => ({
+      ...c,
+      tweet: { ...c.tweet, embedding: undefined },
+    }));
+
     return NextResponse.json({
-      tweets: results,
+      tweets: cleaned,
       meta: {
         totalCandidates: results.length,
         pipelineMs,

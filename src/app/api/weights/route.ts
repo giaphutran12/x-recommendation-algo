@@ -19,6 +19,8 @@ const DEFAULT_WEIGHTS: AlgorithmWeights = {
     follow_author: 1.0,
     not_interested: 1.0,
   },
+  oon_penalty: undefined,
+  diversity_decay: undefined,
   updated_at: new Date().toISOString(),
 };
 
@@ -80,6 +82,8 @@ export async function PUT(request: NextRequest) {
           network_weight: body.network_weight,
           topic_relevance_weight: body.topic_relevance_weight,
           engagement_type_weights: body.engagement_type_weights,
+          oon_penalty: body.oon_penalty,
+          diversity_decay: body.diversity_decay,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'user_id' },

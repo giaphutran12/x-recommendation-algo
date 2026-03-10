@@ -6,8 +6,8 @@ const DEFAULT_OON_PENALTY = 0.7;
 export const OutOfNetworkScorer: Scorer = {
   name: 'OutOfNetworkScorer',
 
-  async score(_query: FeedQuery, candidates: ScoredCandidate[]): Promise<ScoredCandidate[]> {
-    const factor = DEFAULT_OON_PENALTY;
+  async score(query: FeedQuery, candidates: ScoredCandidate[]): Promise<ScoredCandidate[]> {
+    const factor = query.algorithm_weights.oon_penalty ?? DEFAULT_OON_PENALTY;
     let penalizedCount = 0;
 
     const result = candidates.map((candidate) => {

@@ -56,5 +56,7 @@ export interface AlgorithmWeights {
   network_weight: number;
   topic_relevance_weight: number;
   engagement_type_weights: Record<EngagementType, number>;
+  oon_penalty?: number;
+  diversity_decay?: number;
   updated_at: string;
 }

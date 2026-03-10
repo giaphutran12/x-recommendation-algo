@@ -43,8 +43,13 @@ export async function GET(request: NextRequest) {
           const pipeline = createDefaultPipeline(supabase);
           const results = await pipeline.execute(query);
 
+          const cleaned = results.map((c) => ({
+            ...c,
+            tweet: { ...c.tweet, embedding: undefined },
+          }));
+
           const payload = JSON.stringify({
-            tweets: results,
+            tweets: cleaned,
             meta: {
               totalCandidates: results.length,
               appliedWeights: updatedWeights,

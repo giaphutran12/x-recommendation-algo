@@ -7,11 +7,12 @@ const FLOOR = 0.1;
 export const AuthorDiversityScorer: Scorer = {
   name: 'AuthorDiversityScorer',
 
-  async score(_query: FeedQuery, candidates: ScoredCandidate[]): Promise<ScoredCandidate[]> {
+  async score(query: FeedQuery, candidates: ScoredCandidate[]): Promise<ScoredCandidate[]> {
     const sorted = [...candidates].sort((a, b) => b.score - a.score);
 
     const authorAppearances = new Map<string, number>();
     let penalizedCount = 0;
+    const decay = query.algorithm_weights.diversity_decay ?? DECAY;
 
     const result = sorted.map((candidate) => {
       const authorId = candidate.author.id;
@@ -24,7 +25,7 @@ export const AuthorDiversityScorer: Scorer = {
 
       penalizedCount++;
       // Exponential decay: multiplier approaches FLOOR as repeats increase
-      const multiplier = (1 - FLOOR) * Math.pow(DECAY, position) + FLOOR;
+      const multiplier = (1 - FLOOR) * Math.pow(decay, position) + FLOOR;
       const newScore = candidate.score * multiplier;
 
       return {
