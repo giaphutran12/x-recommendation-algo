@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ScoredCandidate } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import TweetCard from './tweet-card';
-
-const VIEWER_ID = '00000000-0000-0000-0000-000000000001';
+import { VIEWER_ID } from '@/lib/constants';
+import { useFeedContext } from '@/lib/contexts/feed-context';
 
 interface FeedMeta {
   totalCandidates: number;
@@ -19,11 +19,11 @@ interface FeedResponse {
 }
 
 export default function Feed() {
+  const { feedVersion } = useFeedContext();
   const [tweets, setTweets] = useState<ScoredCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [feedVersion, setFeedVersion] = useState(0);
 
   const seenIdsRef = useRef<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -42,12 +42,12 @@ export default function Feed() {
     }
 
     try {
-      const seenParam =
-        seenIdsRef.current.size > 0
-          ? `&seenIds=${Array.from(seenIdsRef.current).join(',')}`
-          : '';
-      const url = `/api/feed?userId=${VIEWER_ID}&limit=50${seenParam}`;
-      const res = await fetch(url, { signal: controller.signal });
+      const res = await fetch('/api/feed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: VIEWER_ID, limit: 50, seenIds: Array.from(seenIdsRef.current) }),
+        signal: controller.signal,
+      });
 
       if (!res.ok) {
         console.error('[FEED] fetch error', res.status);
@@ -75,18 +75,6 @@ export default function Feed() {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const onWeightsSaved = () => {
-      console.log('[FEED] v7:weights-saved event received, triggering refresh');
-      setFeedVersion(v => v + 1);
-    };
-
-    window.addEventListener('v7:weights-saved', onWeightsSaved);
-    return () => {
-      window.removeEventListener('v7:weights-saved', onWeightsSaved);
-    };
   }, []);
 
   useEffect(() => {

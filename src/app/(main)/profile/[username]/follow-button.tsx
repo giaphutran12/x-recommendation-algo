@@ -1,16 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-
-const VIEWER_ID = '00000000-0000-0000-0000-000000000001';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import { VIEWER_ID } from '@/lib/constants';
 
 interface FollowButtonProps {
   userId: string;
@@ -42,7 +36,8 @@ export default function FollowButton({ userId, initialIsFollowing }: FollowButto
           .eq('follower_id', VIEWER_ID)
           .eq('following_id', userId);
       }
-    } catch {
+    } catch (err) {
+      console.error('[FOLLOW]', err);
       setIsFollowing(wasFollowing);
     } finally {
       setIsPending(false);

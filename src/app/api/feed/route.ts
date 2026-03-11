@@ -3,11 +3,10 @@ import { supabase } from '@/lib/supabase/server';
 import { createDefaultPipeline } from '@/lib/ranking/create-pipeline';
 import type { FeedQuery } from '@/lib/types/ranking';
 import type { AlgorithmWeights } from '@/lib/types/database';
-
-const DEFAULT_VIEWER_ID = '00000000-0000-0000-0000-000000000001';
+import { VIEWER_ID } from '@/lib/constants';
 
 const DEFAULT_WEIGHTS: AlgorithmWeights = {
-  user_id: DEFAULT_VIEWER_ID,
+  user_id: VIEWER_ID,
   recency_weight: 1.0,
   popularity_weight: 1.0,
   network_weight: 1.0,
@@ -25,21 +24,21 @@ const DEFAULT_WEIGHTS: AlgorithmWeights = {
   updated_at: new Date().toISOString(),
 };
 
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   const startMs = performance.now();
 
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const userId = searchParams.get('userId') ?? DEFAULT_VIEWER_ID;
-    const rawLimit = parseInt(searchParams.get('limit') ?? '50', 10);
+    const body = await request.json();
+    const userId = body.userId ?? VIEWER_ID;
+    const rawLimit = body.limit ?? 50;
     const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
-    const seenIds = searchParams.get('seenIds')?.split(',').filter(Boolean) ?? [];
+    const seenIds = Array.isArray(body.seenIds) ? body.seenIds.filter((id: string) => typeof id === 'string') : [];
 
-    const { data: weights } = await supabase
-      .from('algorithm_weights')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+     const { data: weights } = await supabase
+       .from('algorithm_weights')
+       .select('*')
+       .eq('user_id', userId)
+       .maybeSingle();
 
     const appliedWeights: AlgorithmWeights = weights ?? {
       ...DEFAULT_WEIGHTS,

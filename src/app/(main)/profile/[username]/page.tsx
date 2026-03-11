@@ -6,8 +6,7 @@ import TweetCard from '../../_components/tweet-card';
 import FollowButton from './follow-button';
 import type { ScoredCandidate } from '@/lib/types/ranking';
 import type { User, Tweet, PersonaType } from '@/lib/types/database';
-
-const VIEWER_ID = '00000000-0000-0000-0000-000000000001';
+import { VIEWER_ID } from '@/lib/constants';
 
 const PERSONA_COLORS: Record<PersonaType, string> = {
   founder: 'text-blue-400 border-blue-500/30 bg-blue-500/10',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, ChevronUp, RefreshCw, Check } from 'lucide-react'
 
@@ -15,8 +15,8 @@ import { Spinner } from '@/components/ui/spinner'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import type { AlgorithmWeights, EngagementType } from '@/lib/types/database'
-
-const USER_ID = '00000000-0000-0000-0000-000000000001'
+import { VIEWER_ID } from '@/lib/constants'
+import { useFeedContext } from '@/lib/contexts/feed-context'
 
 type MainWeightKey =
   | 'recency_weight'
@@ -41,7 +41,7 @@ const ENGAGEMENT_SLIDERS: { key: EngagementType; label: string; sliderClass: str
 ]
 
 const DEFAULT_WEIGHTS: AlgorithmWeights = {
-  user_id: USER_ID,
+  user_id: VIEWER_ID,
   recency_weight: 0.3,
   popularity_weight: 0.25,
   network_weight: 0.25,
@@ -83,30 +83,38 @@ function weightsAreDirty(current: AlgorithmWeights, saved: AlgorithmWeights): bo
 }
 
 function AlgorithmPanel() {
-  const [weights, setWeights] = useState<AlgorithmWeights>(DEFAULT_WEIGHTS)
-  const [savedWeights, setSavedWeights] = useState<AlgorithmWeights>(DEFAULT_WEIGHTS)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
+   const { notifyFeedRefresh } = useFeedContext()
+   const [weights, setWeights] = useState<AlgorithmWeights>(DEFAULT_WEIGHTS)
+   const [savedWeights, setSavedWeights] = useState<AlgorithmWeights>(DEFAULT_WEIGHTS)
+   const [loading, setLoading] = useState(true)
+   const [saving, setSaving] = useState(false)
+   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
+   const [advancedOpen, setAdvancedOpen] = useState(false)
+   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    const fetchWeights = async () => {
-      try {
-        const res = await fetch(`/api/weights?userId=${USER_ID}`)
-        if (res.ok) {
-          const data = (await res.json()) as { weights: AlgorithmWeights }
-          setWeights(data.weights)
-          setSavedWeights(data.weights)
-        }
-      } catch (err) {
-        console.error('[WEIGHTS] GET failed:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchWeights()
-  }, [])
+   useEffect(() => {
+     const fetchWeights = async () => {
+       try {
+         const res = await fetch(`/api/weights?userId=${VIEWER_ID}`)
+         if (res.ok) {
+           const data = (await res.json()) as { weights: AlgorithmWeights }
+           setWeights(data.weights)
+           setSavedWeights(data.weights)
+         }
+       } catch (err) {
+         console.error('[WEIGHTS] GET failed:', err)
+       } finally {
+         setLoading(false)
+       }
+     }
+     fetchWeights()
+   }, [])
+
+   useEffect(() => {
+     return () => {
+       if (timerRef.current) clearTimeout(timerRef.current)
+     }
+   }, [])
 
   const handleMainSlider = useCallback(
     (key: MainWeightKey) =>
@@ -139,7 +147,7 @@ function AlgorithmPanel() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: USER_ID,
+          user_id: VIEWER_ID,
           recency_weight: weights.recency_weight,
           popularity_weight: weights.popularity_weight,
           network_weight: weights.network_weight,
@@ -150,26 +158,29 @@ function AlgorithmPanel() {
           updated_at: new Date().toISOString(),
         }),
       })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        console.error('[WEIGHTS] PUT failed:', res.status, body?.error)
-        setSaveStatus('error')
-        setTimeout(() => setSaveStatus('idle'), 3000)
-        return
-      }
-      const saved: AlgorithmWeights = { ...weights, updated_at: new Date().toISOString() }
-      setSavedWeights(saved)
-      setWeights(saved)
-      setSaveStatus('saved')
-      window.dispatchEvent(new Event('v7:weights-saved'))
-      setTimeout(() => setSaveStatus('idle'), 2000)
-    } catch (err) {
-      console.error('[WEIGHTS] PUT exception:', err)
-      setSaveStatus('error')
-      setTimeout(() => setSaveStatus('idle'), 3000)
-    } finally {
-      setSaving(false)
-    }
+       if (!res.ok) {
+         const body = await res.json().catch(() => null)
+         console.error('[WEIGHTS] PUT failed:', res.status, body?.error)
+         setSaveStatus('error')
+         if (timerRef.current) clearTimeout(timerRef.current)
+         timerRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
+         return
+       }
+       const saved: AlgorithmWeights = { ...weights, updated_at: new Date().toISOString() }
+       setSavedWeights(saved)
+       setWeights(saved)
+       setSaveStatus('saved')
+       notifyFeedRefresh()
+       if (timerRef.current) clearTimeout(timerRef.current)
+       timerRef.current = setTimeout(() => setSaveStatus('idle'), 2000)
+     } catch (err) {
+       console.error('[WEIGHTS] PUT exception:', err)
+       setSaveStatus('error')
+       if (timerRef.current) clearTimeout(timerRef.current)
+       timerRef.current = setTimeout(() => setSaveStatus('idle'), 3000)
+     } finally {
+       setSaving(false)
+     }
   }
 
   const handleReset = () => {

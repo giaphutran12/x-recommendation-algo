@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/server';
 import type { AlgorithmWeights } from '@/lib/types/database';
-
-const DEFAULT_VIEWER_ID = '00000000-0000-0000-0000-000000000001';
+import { VIEWER_ID } from '@/lib/constants';
 
 const DEFAULT_WEIGHTS: AlgorithmWeights = {
-  user_id: DEFAULT_VIEWER_ID,
+  user_id: VIEWER_ID,
   recency_weight: 1.0,
   popularity_weight: 1.0,
   network_weight: 1.0,
@@ -26,7 +25,7 @@ const DEFAULT_WEIGHTS: AlgorithmWeights = {
 export async function GET(request: NextRequest) {
   try {
     const userId =
-      request.nextUrl.searchParams.get('userId') ?? DEFAULT_VIEWER_ID;
+      request.nextUrl.searchParams.get('userId') ?? VIEWER_ID;
 
     console.log(`[WEIGHTS] GET weights for userId=${userId}`);
 
@@ -57,7 +56,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const userId = body.user_id ?? DEFAULT_VIEWER_ID;
+    const userId = body.user_id ?? VIEWER_ID;
 
     console.log(`[WEIGHTS] PUT weights for userId=${userId}`);
 
