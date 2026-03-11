@@ -87,7 +87,7 @@ function AlgorithmPanel() {
   const [savedWeights, setSavedWeights] = useState<AlgorithmWeights>(DEFAULT_WEIGHTS)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle')
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle')
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
   useEffect(() => {
@@ -99,8 +99,8 @@ function AlgorithmPanel() {
           setWeights(data.weights)
           setSavedWeights(data.weights)
         }
-      } catch {
-        void 0
+      } catch (err) {
+        console.error('[WEIGHTS] GET failed:', err)
       } finally {
         setLoading(false)
       }
@@ -150,23 +150,30 @@ function AlgorithmPanel() {
           updated_at: new Date().toISOString(),
         }),
       })
-      if (res.ok) {
-        const saved: AlgorithmWeights = { ...weights, updated_at: new Date().toISOString() }
-        setSavedWeights(saved)
-        setWeights(saved)
-        setSaveStatus('saved')
-        window.dispatchEvent(new Event('v7:weights-saved'))
-        setTimeout(() => setSaveStatus('idle'), 2000)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        console.error('[WEIGHTS] PUT failed:', res.status, body?.error)
+        setSaveStatus('error')
+        setTimeout(() => setSaveStatus('idle'), 3000)
+        return
       }
-    } catch {
-      void 0
+      const saved: AlgorithmWeights = { ...weights, updated_at: new Date().toISOString() }
+      setSavedWeights(saved)
+      setWeights(saved)
+      setSaveStatus('saved')
+      window.dispatchEvent(new Event('v7:weights-saved'))
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch (err) {
+      console.error('[WEIGHTS] PUT exception:', err)
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 3000)
     } finally {
       setSaving(false)
     }
   }
 
   const handleReset = () => {
-    setWeights(savedWeights)
+    setWeights(DEFAULT_WEIGHTS)
   }
 
   const dirty = weightsAreDirty(weights, savedWeights)
@@ -314,9 +321,13 @@ function AlgorithmPanel() {
         </Collapsible>
       </div>
 
-      {(dirty || saveStatus === 'saved') && (
+      {(dirty || saveStatus === 'saved' || saveStatus === 'error') && (
         <div className="flex shrink-0 items-center gap-2 mx-4 px-8 py-4 border-t border-border">
-          {saveStatus === 'saved' ? (
+          {saveStatus === 'error' ? (
+            <div className="flex flex-1 items-center gap-1.5 text-xs font-medium text-destructive">
+              Save failed — check console
+            </div>
+          ) : saveStatus === 'saved' ? (
             <div className="flex flex-1 items-center gap-1.5 text-xs font-medium text-primary">
               <Check className="size-3.5 shrink-0" />
               Saved!

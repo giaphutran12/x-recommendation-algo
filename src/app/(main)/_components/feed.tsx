@@ -27,8 +27,13 @@ export default function Feed() {
 
   const seenIdsRef = useRef<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchFeed = useCallback(async (reset: boolean) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     if (reset) {
       setLoading(true);
       seenIdsRef.current.clear();
@@ -42,7 +47,7 @@ export default function Feed() {
           ? `&seenIds=${Array.from(seenIdsRef.current).join(',')}`
           : '';
       const url = `/api/feed?userId=${VIEWER_ID}&limit=50${seenParam}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
 
       if (!res.ok) {
         console.error('[FEED] fetch error', res.status);
@@ -64,29 +69,12 @@ export default function Feed() {
 
       setHasMore(incoming.length >= 10);
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('[FEED] fetch exception', err);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const es = new EventSource(`/api/feed/stream?userId=${VIEWER_ID}`);
-
-    es.addEventListener('feed', (e: Event) => {
-      console.log('[FEED] SSE feed event', (e as MessageEvent).data);
-      void fetchFeed(true);
-    });
-
-    es.onerror = () => {
-      console.error('[FEED] SSE error, closing');
-      es.close();
-    };
-
-    return () => {
-      es.close();
-    };
   }, []);
 
   useEffect(() => {
