@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   typescript: {
     tsconfigPath: "./tsconfig.json",
   },
+  serverExternalPackages: ["onnxruntime-node"],
 };
 
 export default nextConfig;
