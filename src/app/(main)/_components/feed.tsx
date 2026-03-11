@@ -23,6 +23,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [feedVersion, setFeedVersion] = useState(0);
 
   const seenIdsRef = useRef<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -90,8 +91,8 @@ export default function Feed() {
 
   useEffect(() => {
     const onWeightsSaved = () => {
-      console.log('[FEED] v7:weights-saved event received, re-fetching feed');
-      void fetchFeed(true);
+      console.log('[FEED] v7:weights-saved event received, triggering refresh');
+      setFeedVersion(v => v + 1);
     };
 
     window.addEventListener('v7:weights-saved', onWeightsSaved);
@@ -99,6 +100,10 @@ export default function Feed() {
       window.removeEventListener('v7:weights-saved', onWeightsSaved);
     };
   }, []);
+
+  useEffect(() => {
+    void fetchFeed(true);
+  }, [fetchFeed, feedVersion]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -116,11 +121,6 @@ export default function Feed() {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [fetchFeed, hasMore, loadingMore, loading]);
-
-  useEffect(() => {
-    void fetchFeed(true);
-  }, [fetchFeed]);
-
 
   return (
     <div className="relative bg-background">
