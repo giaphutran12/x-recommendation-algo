@@ -22,7 +22,6 @@ export default function Feed() {
   const [tweets, setTweets] = useState<ScoredCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [dirty, setDirty] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   const seenIdsRef = useRef<Set<string>>(new Set());
@@ -58,7 +57,6 @@ export default function Feed() {
 
       if (reset) {
         setTweets(incoming);
-        setDirty(false);
       } else {
         setTweets((prev) => [...prev, ...incoming]);
       }
@@ -77,7 +75,7 @@ export default function Feed() {
 
     es.addEventListener('feed', (e: Event) => {
       console.log('[FEED] SSE feed event', (e as MessageEvent).data);
-      setDirty(true);
+      void fetchFeed(true);
     });
 
     es.onerror = () => {
@@ -92,8 +90,8 @@ export default function Feed() {
 
   useEffect(() => {
     const onWeightsSaved = () => {
-      console.log('[FEED] v7:weights-saved event received, marking dirty');
-      setDirty(true);
+      console.log('[FEED] v7:weights-saved event received, re-fetching feed');
+      void fetchFeed(true);
     };
 
     window.addEventListener('v7:weights-saved', onWeightsSaved);
@@ -123,20 +121,10 @@ export default function Feed() {
     void fetchFeed(true);
   }, [fetchFeed]);
 
-  const handleRefresh = () => {
-    void fetchFeed(true);
-  };
 
   return (
     <div className="relative bg-background">
-      {dirty && (
-        <button
-          onClick={handleRefresh}
-          className="sticky top-[53px] z-10 w-full cursor-pointer border-b border-border bg-card py-3 text-center text-sm font-medium text-primary transition-colors hover:bg-foreground/5"
-        >
-          New tweets available — tap to refresh
-        </button>
-      )}
+
 
         {loading && (
           <div className="divide-y divide-border">
