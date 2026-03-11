@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { feedEvents } from '@/lib/feed-events';
+import { supabase } from '@/lib/supabase/server';
 import type { AlgorithmWeights } from '@/lib/types/database';
 
 const DEFAULT_VIEWER_ID = '00000000-0000-0000-0000-000000000001';
@@ -30,11 +29,6 @@ export async function GET(request: NextRequest) {
       request.nextUrl.searchParams.get('userId') ?? DEFAULT_VIEWER_ID;
 
     console.log(`[WEIGHTS] GET weights for userId=${userId}`);
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
 
     const { data, error } = await supabase
       .from('algorithm_weights')
@@ -67,23 +61,50 @@ export async function PUT(request: NextRequest) {
 
     console.log(`[WEIGHTS] PUT weights for userId=${userId}`);
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    const recencyWeight = Number(body.recency_weight ?? 0.3);
+    const popularityWeight = Number(body.popularity_weight ?? 0.25);
+    const networkWeight = Number(body.network_weight ?? 0.25);
+    const topicRelevanceWeight = Number(body.topic_relevance_weight ?? 0.2);
+    const oonPenalty = Number(body.oon_penalty ?? 0.7);
+    const diversityDecay = Number(body.diversity_decay ?? 0.5);
+
+    if (
+      isNaN(recencyWeight) ||
+      isNaN(popularityWeight) ||
+      isNaN(networkWeight) ||
+      isNaN(topicRelevanceWeight) ||
+      isNaN(oonPenalty) ||
+      isNaN(diversityDecay)
+    ) {
+      return NextResponse.json({ error: 'Invalid weight value' }, { status: 400 });
+    }
+
+    const engagementTypeWeights = body.engagement_type_weights ?? {};
+    if (typeof engagementTypeWeights !== 'object' || Array.isArray(engagementTypeWeights)) {
+      return NextResponse.json({ error: 'Invalid weight value' }, { status: 400 });
+    }
+
+    const validatedEngagementWeights: Record<string, number> = {};
+    for (const [key, value] of Object.entries(engagementTypeWeights)) {
+      const numValue = Number(value);
+      if (isNaN(numValue)) {
+        return NextResponse.json({ error: 'Invalid weight value' }, { status: 400 });
+      }
+      validatedEngagementWeights[key] = Math.min(10, Math.max(-10, numValue));
+    }
 
     const { data, error } = await supabase
       .from('algorithm_weights')
       .upsert(
         {
           user_id: userId,
-          recency_weight: body.recency_weight,
-          popularity_weight: body.popularity_weight,
-          network_weight: body.network_weight,
-          topic_relevance_weight: body.topic_relevance_weight,
-          engagement_type_weights: body.engagement_type_weights,
-          oon_penalty: body.oon_penalty,
-          diversity_decay: body.diversity_decay,
+          recency_weight: Math.min(1, Math.max(0, recencyWeight)),
+          popularity_weight: Math.min(1, Math.max(0, popularityWeight)),
+          network_weight: Math.min(1, Math.max(0, networkWeight)),
+          topic_relevance_weight: Math.min(1, Math.max(0, topicRelevanceWeight)),
+          engagement_type_weights: validatedEngagementWeights,
+          oon_penalty: Math.min(1, Math.max(0, oonPenalty)),
+          diversity_decay: Math.min(1, Math.max(0, diversityDecay)),
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'user_id' },
@@ -96,8 +117,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    feedEvents.emit(userId, data);
-    console.log(`[WEIGHTS] Emitted weight change event for userId=${userId}`);
+    console.log(`[WEIGHTS] Saved weights for userId=${userId}`);
 
     return NextResponse.json({ weights: data });
   } catch (err) {

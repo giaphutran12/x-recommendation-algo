@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase/server';
 import { createDefaultPipeline } from '@/lib/ranking/create-pipeline';
 import type { FeedQuery } from '@/lib/types/ranking';
 import type { AlgorithmWeights } from '@/lib/types/database';
@@ -31,13 +31,9 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get('userId') ?? DEFAULT_VIEWER_ID;
-    const limit = parseInt(searchParams.get('limit') ?? '50', 10);
+    const rawLimit = parseInt(searchParams.get('limit') ?? '50', 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
     const seenIds = searchParams.get('seenIds')?.split(',').filter(Boolean) ?? [];
-
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
 
     const { data: weights } = await supabase
       .from('algorithm_weights')
@@ -66,10 +62,10 @@ export async function GET(request: NextRequest) {
       `[FEED] Feed request: userId=${userId}, limit=${limit}, pipeline=${pipelineMs}ms, results=${results.length}`,
     );
 
-    const cleaned = results.map((c) => ({
-      ...c,
-      tweet: { ...c.tweet, embedding: undefined },
-    }));
+    const cleaned = results.map((c) => {
+      const { embedding, ...tweetWithoutEmbedding } = c.tweet;
+      return { ...c, tweet: tweetWithoutEmbedding };
+    });
 
     return NextResponse.json({
       tweets: cleaned,
