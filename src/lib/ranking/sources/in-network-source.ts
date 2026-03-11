@@ -52,17 +52,23 @@ export class InNetworkSource implements CandidateSource {
       return [];
     }
 
-    const candidates: ScoredCandidate[] = rows.map((row) => {
-      const { author, ...tweetFields } = row as { author: User } & Record<string, unknown>;
-      return {
-        tweet: tweetFields as unknown as Tweet,
-        author,
-        score: 0,
-        in_network: true,
-        engagement_predictions: null,
-        explanation: null,
-      };
-    });
+    const candidates: ScoredCandidate[] = rows
+      .map((row) => {
+        const { author, ...tweetFields } = row as { author: User } & Record<string, unknown>;
+        if (!tweetFields.id || !tweetFields.content || !tweetFields.author_id) {
+          console.error('[RANK] Invalid tweet row, skipping:', tweetFields.id);
+          return null;
+        }
+        return {
+          tweet: tweetFields as unknown as Tweet,
+          author,
+          score: 0,
+          in_network: true,
+          engagement_predictions: null,
+          explanation: null,
+        } as ScoredCandidate;
+      })
+      .filter((candidate): candidate is ScoredCandidate => candidate !== null);
 
     console.log(
       `[RANK] In-network source: retrieved ${candidates.length} candidates from ${followedIds.length} followed accounts`

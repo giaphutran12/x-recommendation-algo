@@ -31,16 +31,17 @@ interface OnnxResources {
 }
 
 let onnxResources: OnnxResources | null = null;
-let onnxLoadAttempted = false;
+let onnxPermanentlyFailed = false;
 
 async function tryLoadOnnx(): Promise<OnnxResources | null> {
-  if (onnxLoadAttempted) return onnxResources;
-  onnxLoadAttempted = true;
+  if (onnxResources) return onnxResources;
+  if (onnxPermanentlyFailed) return null;
 
   const modelPath = path.join(process.cwd(), 'models', 'two_tower.onnx');
   const configPath = path.join(process.cwd(), 'models', 'feature_config.json');
 
   if (!fs.existsSync(modelPath) || !fs.existsSync(configPath)) {
+    onnxPermanentlyFailed = true;
     return null;
   }
 
@@ -54,6 +55,10 @@ async function tryLoadOnnx(): Promise<OnnxResources | null> {
     console.log('[RANK] ONNX engagement model loaded');
     return onnxResources;
   } catch (err) {
+    const errStr = String(err);
+    if (errStr.includes('ENOENT') || errStr.includes('no such file')) {
+      onnxPermanentlyFailed = true;
+    }
     console.warn('[RANK] Failed to load ONNX model, falling back to heuristic:', err);
     return null;
   }

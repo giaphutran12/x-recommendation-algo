@@ -54,23 +54,29 @@ export class EngagementHydrator implements Hydrator {
       authorIds
     );
 
-    for (const candidate of candidates) {
-      const counts = countsMap.get(candidate.tweet.id);
-      if (counts) {
-        candidate.tweet.like_count = counts.like_count;
-        candidate.tweet.reply_count = counts.reply_count;
-        candidate.tweet.repost_count = counts.repost_count;
-        candidate.tweet.click_count = counts.click_count;
-      }
-
-      const affinity = authorEngagementCounts.get(candidate.tweet.author_id) ?? 0;
-      (candidate as ScoredCandidateWithAffinity).viewer_author_affinity = affinity;
-    }
-
     console.log(
       `[RANK] Hydrated ${candidates.length} candidates with engagement data`
     );
-    return candidates;
+
+    return candidates.map((candidate) => {
+      const counts = countsMap.get(candidate.tweet.id);
+      const updatedTweet = counts
+        ? {
+            ...candidate.tweet,
+            like_count: counts.like_count,
+            reply_count: counts.reply_count,
+            repost_count: counts.repost_count,
+            click_count: counts.click_count,
+          }
+        : candidate.tweet;
+
+      const affinity = authorEngagementCounts.get(candidate.tweet.author_id) ?? 0;
+      return {
+        ...candidate,
+        tweet: updatedTweet,
+        viewer_author_affinity: affinity,
+      } as ScoredCandidateWithAffinity;
+    });
   }
 
   /**

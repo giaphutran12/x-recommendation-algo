@@ -114,10 +114,12 @@ export class OutOfNetworkSource implements CandidateSource {
       Date.now() - OON_TIME_WINDOW_HOURS * 60 * 60 * 1000
     ).toISOString();
 
+    const safeIds = excludedIds.filter(id => /^[0-9a-f-]{36}$/i.test(id));
+
     const { data: rows, error } = await this.supabase
       .from('tweets')
       .select('*, author:users!author_id(*)')
-      .not('author_id', 'in', `(${excludedIds.join(',')})`)
+      .not('author_id', 'in', `(${safeIds.join(',')})`)
       .gte('created_at', cutoff)
       .order('like_count', { ascending: false })
       .limit(OON_MAX_CANDIDATES);
@@ -137,16 +139,22 @@ export class OutOfNetworkSource implements CandidateSource {
   }
 
   private mapRowsToCandidates(rows: Record<string, unknown>[], inNetwork: boolean): ScoredCandidate[] {
-    return rows.map((row) => {
-      const { author, ...tweetFields } = row as { author: User } & Record<string, unknown>;
-      return {
-        tweet: tweetFields as unknown as Tweet,
-        author,
-        score: 0,
-        in_network: inNetwork,
-        engagement_predictions: null,
-        explanation: null,
-      };
-    });
+    return rows
+      .map((row) => {
+        const { author, ...tweetFields } = row as { author: User } & Record<string, unknown>;
+        if (!tweetFields.id || !tweetFields.content || !tweetFields.author_id) {
+          console.error('[RANK] Invalid tweet row, skipping:', tweetFields.id);
+          return null;
+        }
+        return {
+          tweet: tweetFields as unknown as Tweet,
+          author,
+          score: 0,
+          in_network: inNetwork,
+          engagement_predictions: null,
+          explanation: null,
+        } as ScoredCandidate;
+      })
+      .filter((candidate): candidate is ScoredCandidate => candidate !== null);
   }
 }
