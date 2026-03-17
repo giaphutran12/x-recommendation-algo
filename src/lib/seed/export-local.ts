@@ -51,7 +51,7 @@ async function exportTables() {
   );
   await Bun.write(
     join(DATA_DIR, 'users.json'),
-    JSON.stringify(users, null, 2),
+    JSON.stringify(users),
   );
   const usersSize = statSync(join(DATA_DIR, 'users.json')).size;
   console.log(`[EXPORT] Exported users: ${users.length} rows (${usersSize} bytes)`);
@@ -62,7 +62,7 @@ async function exportTables() {
   );
   await Bun.write(
     join(DATA_DIR, 'follows.json'),
-    JSON.stringify(follows, null, 2),
+    JSON.stringify(follows),
   );
   const followsSize = statSync(join(DATA_DIR, 'follows.json')).size;
   console.log(`[EXPORT] Exported follows: ${follows.length} rows (${followsSize} bytes)`);
@@ -78,7 +78,7 @@ async function exportTables() {
   );
   await Bun.write(
     join(DATA_DIR, 'tweets.json'),
-    JSON.stringify(tweets, null, 2),
+    JSON.stringify(tweets),
   );
   const tweetsSize = statSync(join(DATA_DIR, 'tweets.json')).size;
   console.log(`[EXPORT] Exported tweets: ${tweets.length} rows (${tweetsSize} bytes)`);
@@ -89,7 +89,7 @@ async function exportTables() {
   );
   await Bun.write(
     join(DATA_DIR, 'engagements.json'),
-    JSON.stringify(engagements, null, 2),
+    JSON.stringify(engagements),
   );
   const engagementsSize = statSync(join(DATA_DIR, 'engagements.json')).size;
   console.log(`[EXPORT] Exported engagements: ${engagements.length} rows (${engagementsSize} bytes)`);

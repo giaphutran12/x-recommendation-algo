@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase/server';
-import { createDefaultPipeline } from '@/lib/ranking/create-pipeline';
+import { createDefaultPipeline, createLocalPipeline } from '@/lib/ranking/create-pipeline';
 import type { FeedQuery } from '@/lib/types/ranking';
 import type { AlgorithmWeights } from '@/lib/types/database';
 import { VIEWER_ID } from '@/lib/constants';
@@ -34,11 +34,7 @@ export async function POST(request: NextRequest) {
     const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
     const seenIds = Array.isArray(body.seenIds) ? body.seenIds.filter((id: string) => typeof id === 'string') : [];
 
-     const { data: weights } = await supabase
-       .from('algorithm_weights')
-       .select('*')
-       .eq('user_id', userId)
-       .maybeSingle();
+    const weights = supabase ? (await supabase.from('algorithm_weights').select('*').eq('user_id', userId).maybeSingle()).data : null;
 
     const appliedWeights: AlgorithmWeights = weights ?? {
       ...DEFAULT_WEIGHTS,
@@ -53,7 +49,11 @@ export async function POST(request: NextRequest) {
       algorithm_weights: appliedWeights,
     };
 
-    const pipeline = createDefaultPipeline(supabase);
+    const isLocal = !supabase;
+    if (isLocal) {
+      console.log('[FEED] Supabase unavailable — using local data fallback (DB was removed to free up Supabase free tier slots, shipping too many projects)');
+    }
+    const pipeline = isLocal ? createLocalPipeline() : createDefaultPipeline(supabase!);
     const results = await pipeline.execute(query);
     const pipelineMs = Math.round(performance.now() - startMs);
 
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
         totalCandidates: results.length,
         pipelineMs,
         appliedWeights,
+        dataSource: isLocal ? 'local' : 'supabase',
       },
     });
   } catch (err) {

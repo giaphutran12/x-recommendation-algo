@@ -6,11 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import TweetCard from './tweet-card';
 import { VIEWER_ID } from '@/lib/constants';
 import { useFeedContext } from '@/lib/contexts/feed-context';
+import { Database } from 'lucide-react';
 
 interface FeedMeta {
   totalCandidates: number;
   pipelineMs: number;
   appliedWeights: Record<string, number>;
+  dataSource?: 'supabase' | 'local';
 }
 
 interface FeedResponse {
@@ -24,6 +26,7 @@ export default function Feed() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [dataSource, setDataSource] = useState<string | null>(null);
 
   const seenIdsRef = useRef<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +58,7 @@ export default function Feed() {
       }
 
       const data: FeedResponse = await res.json();
+      if (data.meta?.dataSource) setDataSource(data.meta.dataSource);
       const incoming = data.tweets ?? [];
 
       for (const t of incoming) {
@@ -100,7 +104,12 @@ export default function Feed() {
 
   return (
     <div className="relative bg-background">
-
+      {dataSource === 'local' && (
+        <div className="mx-4 mt-3 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+          <Database className="size-3.5 shrink-0" />
+          <span>Running on local data — Supabase DB was freed up (only 2 free tier slots, shipping too many projects)</span>
+        </div>
+      )}
 
         {loading && (
           <div className="divide-y divide-border">

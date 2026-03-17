@@ -23,6 +23,8 @@ const DEFAULT_WEIGHTS: AlgorithmWeights = {
 };
 
 export async function GET(request: NextRequest) {
+  if (!supabase) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+
   try {
     const userId =
       request.nextUrl.searchParams.get('userId') ?? VIEWER_ID;
@@ -54,6 +56,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!supabase) return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+
   try {
     const body = await request.json();
     const userId = body.user_id ?? VIEWER_ID;
