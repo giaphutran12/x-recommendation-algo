@@ -3,7 +3,7 @@ import type { CandidateSource } from '@/lib/types/pipeline';
 import type { FeedQuery, ScoredCandidate } from '@/lib/types/ranking';
 import type { Tweet, User } from '@/lib/types/database';
 
-const OON_TIME_WINDOW_HOURS = 168; // 7 days — matches AgeFilter & seed distribution
+const OON_TIME_WINDOW_HOURS = 8760; // 365 days — demo app with static seed data
 const OON_MAX_CANDIDATES = 100;
 const OON_ENGAGEMENT_LOOKBACK = 50;
 

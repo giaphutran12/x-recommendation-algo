@@ -3,7 +3,7 @@ import type { CandidateSource } from '@/lib/types/pipeline';
 import type { FeedQuery, ScoredCandidate } from '@/lib/types/ranking';
 import type { Tweet, User } from '@/lib/types/database';
 
-const IN_NETWORK_TIME_WINDOW_HOURS = 168; // 7 days — matches AgeFilter & seed distribution
+const IN_NETWORK_TIME_WINDOW_HOURS = 8760; // 365 days — demo app with static seed data
 const IN_NETWORK_MAX_CANDIDATES = 200;
 
 export class InNetworkSource implements CandidateSource {
