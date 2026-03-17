@@ -10,7 +10,8 @@
     "lint": "next lint",
     "seed": "bun run src/lib/seed/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "export-local": "bun run src/lib/seed/export-local.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",
