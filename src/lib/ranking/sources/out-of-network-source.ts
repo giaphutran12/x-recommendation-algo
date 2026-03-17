@@ -3,9 +3,24 @@ import type { CandidateSource } from '@/lib/types/pipeline';
 import type { FeedQuery, ScoredCandidate } from '@/lib/types/ranking';
 import type { Tweet, User } from '@/lib/types/database';
 
-const OON_TIME_WINDOW_HOURS = 72;
+const OON_TIME_WINDOW_HOURS = 168; // 7 days — matches AgeFilter & seed distribution
 const OON_MAX_CANDIDATES = 100;
 const OON_ENGAGEMENT_LOOKBACK = 50;
+
+function parseEmbedding(raw: unknown): number[] | null {
+  if (Array.isArray(raw)) return raw as number[];
+  if (typeof raw === 'string') {
+    try {
+      const trimmed = raw.trim();
+      // pgvector format: [0.1,0.2,...] — valid JSON
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed as number[];
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 function averageEmbeddings(embeddings: number[][]): number[] | null {
   if (embeddings.length === 0) return null;
@@ -16,7 +31,10 @@ function averageEmbeddings(embeddings: number[][]): number[] | null {
       sum[i] += emb[i];
     }
   }
-  return sum.map((v) => v / embeddings.length);
+  const avg = sum.map((v) => v / embeddings.length);
+  // Guard against NaN propagation from malformed embeddings
+  if (avg.some((v) => !Number.isFinite(v))) return null;
+  return avg;
 }
 
 export class OutOfNetworkSource implements CandidateSource {
@@ -67,7 +85,7 @@ export class OutOfNetworkSource implements CandidateSource {
     if (!tweets || tweets.length === 0) return null;
 
     const embeddings = tweets
-      .map((t: { embedding: number[] | null }) => t.embedding)
+      .map((t: { embedding: unknown }) => parseEmbedding(t.embedding))
       .filter((emb): emb is number[] => emb !== null);
 
     return averageEmbeddings(embeddings);

@@ -1,13 +1,13 @@
 import type { Filter } from '@/lib/types/pipeline';
 import type { FeedQuery, ScoredCandidate } from '@/lib/types/ranking';
 
-const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class AgeFilter implements Filter {
   readonly name = 'AgeFilter';
   private readonly maxAgeMs: number;
 
-  constructor(maxAgeMs: number = FORTY_EIGHT_HOURS_MS) {
+  constructor(maxAgeMs: number = SEVEN_DAYS_MS) {
     this.maxAgeMs = maxAgeMs;
   }
 
